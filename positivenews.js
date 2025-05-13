@@ -18,6 +18,38 @@ async function saveCache(cache) {
     });
 }
 
+// Function to hide an article element
+function hideArticle(article) {
+    if (article) {
+        // Find button in the article to click
+        const button = article.querySelector('button');
+        if (button) {
+            console.debug(`Clicking button in article`);
+            button.click();
+            // Now, find last <ul> element in whole webpage, then find last <li> element in that <ul> and click it
+            const lastUl = document.querySelector('ul:last-of-type');
+            if (lastUl) {
+                const lastLi = lastUl.querySelector('li:last-of-type');
+                if (lastLi) {
+                    console.debug(`Clicking last <li> in the last <ul> element.`);
+                    lastLi.click();
+                } else {
+                    console.warn(`No <li> found in the last <ul> element.`);
+                }
+            } else {
+                console.warn(`No <ul> found in the document.`);
+            }
+
+            // Then, reclick the button to hide the "More" window
+            button.click();
+        } else {
+            console.warn(`No button found in article.`);
+        }
+        console.debug(`Hiding article:`, article);
+        article.style.display = 'none';
+    }
+}
+
 async function classifyArticles() {  
     // Load the cache from storage
     const articleCache = await loadCache();
@@ -48,8 +80,7 @@ async function classifyArticles() {
                 console.debug(`Title "${title}" found in cache with value:`, isPositive);
 
                 if (!isPositive) {
-                    console.debug(`Hiding article with title "${title}" because it is not positive.`);
-                    article.style.display = 'none';
+                    hideArticle(article);
                 }
                 continue;
             }
@@ -90,8 +121,7 @@ async function classifyArticles() {
                 if (!isPositive) {
                     const article = articleMap.get(title);
                     if (article) {
-                        console.debug(`Hiding article with title "${title}" because it is not positive.`);
-                        article.style.display = 'none';
+                        hideArticle(article);
                     } else {
                         console.error(`Article element not found for title "${title}".`);
                     }
