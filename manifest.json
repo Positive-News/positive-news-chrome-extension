@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "🌻 Positive News",
+  "description": "Decimate the negative news from Google News 📰.",
+  "version": "1.0",
+  "icons": {
+    "128": "icon128.png"
+  },
+  "content_scripts": [
+    {
+      "js": [
+        "positivenews.js"
+      ],
+      "css": [
+        "positivenews.css"
+      ],
+      "matches": [
+        "https://news.google.com/home?*",
+        "https://news.google.com/topics/*"
+      ]
+    }
+  ]
+}
