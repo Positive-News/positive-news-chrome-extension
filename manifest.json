@@ -6,9 +6,13 @@
   "icons": {
     "128": "icon128.png"
   },
+  "action": {},
   "permissions": [
     "storage"
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
       "js": [

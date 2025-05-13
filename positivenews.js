@@ -18,9 +18,12 @@ async function saveCache(cache) {
     });
 }
 
+let countHidden = 0;
+
 // Function to hide an article element
 function hideArticle(article) {
     if (article) {
+        countHidden++;
         // Find button in the article to click
         const button = article.querySelector('button');
         if (button) {
@@ -50,7 +53,25 @@ function hideArticle(article) {
     }
 }
 
-async function classifyArticles() {  
+function tagPositiveArticle(article) {
+    // Add a small 🌻 in the HTML just after <time> element
+    const timeElement = article.querySelector('time');
+    if (timeElement) {
+        const sunflowerEmoji = document.createElement('span');
+        // sunflowerEmoji.className = 'tooltip';
+        // const tooltipText = document.createElement('div');
+        // tooltipText.className = 'tooltiptext';
+        // tooltipText.textContent = 'This article was selected by PositiveNews 🌻';
+        // sunflowerEmoji.appendChild(tooltipText);
+        sunflowerEmoji.textContent = '🌻';
+        sunflowerEmoji.title = 'This article was selected by PositiveNews 🌻'; // Add tooltip
+        timeElement.parentNode.insertBefore(sunflowerEmoji, timeElement.nextSibling);
+    } else {
+        console.warn(`No <time> element found in article.`);
+    }
+}
+
+async function classifyArticles() {
     // Load the cache from storage
     const articleCache = await loadCache();
     console.debug('Article cache loaded:', articleCache);
@@ -79,7 +100,9 @@ async function classifyArticles() {
                 const isPositive = articleCache.get(title);
                 console.debug(`Title "${title}" found in cache with value:`, isPositive);
 
-                if (!isPositive) {
+                if (isPositive) {
+                    tagPositiveArticle(article);
+                } else {
                     hideArticle(article);
                 }
                 continue;
@@ -118,13 +141,15 @@ async function classifyArticles() {
                 articleCache.set(title, isPositive);
 
                 // If the article is not positive, hide it
-                if (!isPositive) {
-                    const article = articleMap.get(title);
-                    if (article) {
-                        hideArticle(article);
+                const article = articleMap.get(title);
+                if (article) {
+                    if (isPositive) {
+                        tagPositiveArticle(article);
                     } else {
-                        console.error(`Article element not found for title "${title}".`);
+                        hideArticle(article);
                     }
+                } else {
+                    console.error(`Article element not found for title "${title}".`);
                 }
             });
 
@@ -137,6 +162,9 @@ async function classifyArticles() {
     } else {
         console.debug('No titles to classify.');
     }
+
+    // Set the badge text to show the number of hidden articles
+    chrome.runtime.sendMessage({ action: 'updateBadge', count: countHidden });
 }
 
 classifyArticles();
