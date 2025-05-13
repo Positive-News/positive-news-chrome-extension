@@ -30,6 +30,11 @@ async function classifyArticles() {
     const articleMap = new Map();
 
     for (const article of articles) {
+        // If article already hidden, skip it
+        if (article.style.display === 'none') {
+            console.debug('Article already hidden, skipping:', article);
+            continue;
+        }
         // Find the first <a> element with non-empty text inside the article
         const links = article.querySelectorAll('a');
         const link = Array.from(links).find(a => a.textContent.trim() !== '');
@@ -85,7 +90,7 @@ async function classifyArticles() {
                 if (!isPositive) {
                     const article = articleMap.get(title);
                     if (article) {
-                        console.warn(`Hiding article with title "${title}" because it is not positive.`);
+                        console.debug(`Hiding article with title "${title}" because it is not positive.`);
                         article.style.display = 'none';
                     } else {
                         console.error(`Article element not found for title "${title}".`);
@@ -105,3 +110,31 @@ async function classifyArticles() {
 }
 
 classifyArticles();
+
+// Utility function to debounce a function
+function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+
+// Debounced version of classifyArticles
+const debouncedClassifyArticles = debounce(classifyArticles, 300);
+
+// Set up a MutationObserver to listen for new article elements added to the DOM
+const observer = new MutationObserver((mutationsList) => {
+    for (const mutation of mutationsList) {
+        if (mutation.type === 'childList') {
+            const addedNodes = Array.from(mutation.addedNodes);
+            const hasNewArticle = addedNodes.some(node => node.tagName === 'ARTICLE' || node.querySelector?.('article'));
+            if (hasNewArticle) {
+                debouncedClassifyArticles();
+            }
+        }
+    }
+});
+
+// Start observing the document body for changes
+observer.observe(document.body, { childList: true, subtree: true });
