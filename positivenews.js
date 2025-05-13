@@ -11,64 +11,97 @@ async function loadCache() {
 async function saveCache(cache) {
     const cacheArray = Array.from(cache.entries());
     return new Promise((resolve) => {
-        chrome.storage.local.set({ articleCache: cacheArray }, resolve);
+        chrome.storage.local.set({ articleCache: cacheArray }, () => {
+            console.debug('Cache saved successfully.');
+            resolve();
+        });
     });
 }
 
-async function classifyArticles() {
+async function classifyArticles() {  
     // Load the cache from storage
     const articleCache = await loadCache();
+    console.debug('Article cache loaded:', articleCache);
 
     // Find all <article> elements on the page
     const articles = document.querySelectorAll('article');
 
+    const titlesToClassify = [];
+    const articleMap = new Map();
+
     for (const article of articles) {
         // Find the first <a> element with non-empty text inside the article
-        const link = article.querySelector('a');
-        const title = link && link.textContent.trim();
-        console.log('Article title:', title);
+        const links = article.querySelectorAll('a');
+        const link = Array.from(links).find(a => a.textContent.trim() !== '');
+        const title = link ? link.textContent.trim() : null;
+        console.debug('Processing article:', { link, title });
 
         if (title) {
             // Check if the title is already in the cache
             if (articleCache.has(title)) {
                 const isPositive = articleCache.get(title);
+                console.debug(`Title "${title}" found in cache with value:`, isPositive);
+
                 if (!isPositive) {
+                    console.debug(`Hiding article with title "${title}" because it is not positive.`);
                     article.style.display = 'none';
                 }
                 continue;
             }
 
-            try {
-                // Call the API with the article title
-                const response = await fetch('https://classify-article-176115608786.us-central1.run.app', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ title }),
-                });
+            // Add the title to the list for classification
+            titlesToClassify.push(title);
+            articleMap.set(title, article);
+        } else {
+            console.warn('Article does not have a valid title or link:', article);
+        }
+    }
 
-                const result = await response.json();
-                console.log('API response:', result);
+    if (titlesToClassify.length > 0) {
+        console.debug('Titles to classify:', titlesToClassify);
 
-                // If the API response contains "positive", store it in the cache
-                if ('positive' in result) {
-                    articleCache.set(title, result.positive);
+        try {
+            // Call the API with the list of article titles
+            console.debug('Sending titles to API for classification...');
+            const response = await fetch('https://classify-articles-176115608786.europe-west9.run.app', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ titles: titlesToClassify }),
+            });
 
-                    // Save the updated cache to storage
-                    await saveCache(articleCache);
+            const results = await response.json();
+            console.debug('API response received:', results);
 
-                    // If the article is not positive, hide it
-                    if (!result.positive) {
+            // Process the API response
+            results.forEach((isPositive, index) => {
+                const title = titlesToClassify[index];
+                console.debug(`Processing API result for title "${title}":`, isPositive);
+
+                articleCache.set(title, isPositive);
+
+                // If the article is not positive, hide it
+                if (!isPositive) {
+                    const article = articleMap.get(title);
+                    if (article) {
+                        console.warn(`Hiding article with title "${title}" because it is not positive.`);
                         article.style.display = 'none';
+                    } else {
+                        console.error(`Article element not found for title "${title}".`);
                     }
                 }
-            } catch (error) {
-                console.error('Error classifying article:', error);
-            }
+            });
+
+            // Save the updated cache to storage
+            saveCache(articleCache);
+
+        } catch (error) {
+            console.error('Error classifying articles:', error);
         }
+    } else {
+        console.debug('No titles to classify.');
     }
 }
 
-// Run the function when the page loads
-document.addEventListener('DOMContentLoaded', classifyArticles);
+classifyArticles();
