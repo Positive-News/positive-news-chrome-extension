@@ -1,3 +1,9 @@
+/**
+ * @file googlenews.js
+ * @author NicolasMICAUX
+ * @contact micaux.nicolas@gmail.com
+ */
+
 const { classifyArticles, debouncedClassifyArticles } = require('./common.js');
 let { countHidden } = require('./common.js');
 
