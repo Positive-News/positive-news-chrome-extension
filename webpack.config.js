@@ -11,6 +11,12 @@ module.exports = {
     filename: '[name].js',
     path: path.resolve(__dirname, 'dist'),
   },
+  devtool: 'inline-source-map', // For development
+  // OR for production:
+  // devtool: 'source-map',
+  optimization: {
+    minimize: false // Disable minification during development
+  },
   module: {
     rules: [
       {
