@@ -5,7 +5,7 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 module.exports = {
   mode: 'production', // or 'development'
   entry: {
-    'positivenews': './positivenews.js'
+    'googlenews': './googlenews.js'
   },
   output: {
     filename: '[name].js',

@@ -16,7 +16,7 @@
   "content_scripts": [
     {
       "js": [
-        "positivenews.js"
+        "googlenews.js"
       ],
       "matches": [
         "https://news.google.com/home?*",
