@@ -1,7 +1,13 @@
 const { classifyArticles, debouncedClassifyArticles } = require('./common.js');
 let { countHidden } = require('./common.js');
 
-// Function to hide an article element
+/**
+ * Hides a given article element.
+ * On Google News, we also click the button "See fewer like this" when hiding the article, to help Google News algorithm understand our preferences.
+ *
+ * @param {HTMLElement} article - The article element to hide. Must be a valid DOM element.
+ * @throws {Error} If `article` is null or undefined.
+ */
 function hideArticle(article) {
     if (article) {
         countHidden++;
@@ -34,9 +40,13 @@ function hideArticle(article) {
     }
 }
 
-// Function to show that an article is positive and was kept by PositiveNews
+/**
+ * Tags a positive article by adding a small sunflower emoji.
+ * @param {HTMLElement} article - The article element to tag. Must be a valid DOM element.
+ * @throws {Error} If `article` is null or undefined.
+ */
 function tagPositiveArticle(article) {
-    // Add a small 🌻 in the HTML just after <time> element
+    // Add a small 🌻 in the HTML just after <time> element on Google News
     const timeElement = article.querySelector('time');
     if (timeElement) {
         const sunflowerEmoji = document.createElement('span');
@@ -48,7 +58,10 @@ function tagPositiveArticle(article) {
     }
 }
 
-// Function to identify all articles on the page
+/**
+ * Function to identify all articles on the page.
+ * @returns {Map} A map where the keys are article titles and the values are the corresponding article elements.
+ */
 function findArticles() {
     const articles = document.querySelectorAll('article');
     const articleMap = new Map();
