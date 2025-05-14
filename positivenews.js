@@ -1,22 +1,4 @@
-// Function to load the cache from chrome.storage.local
-async function loadCache() {
-    return new Promise((resolve) => {
-        chrome.storage.local.get('articleCache', (data) => {
-            resolve(new Map(data.articleCache || []));
-        });
-    });
-}
-
-// Function to save the cache to chrome.storage.local
-async function saveCache(cache) {
-    const cacheArray = Array.from(cache.entries());
-    return new Promise((resolve) => {
-        chrome.storage.local.set({ articleCache: cacheArray }, () => {
-            console.debug('Cache saved successfully.');
-            resolve();
-        });
-    });
-}
+const { loadCache, saveCache, Article } = require('./common.js');
 
 let countHidden = 0;
 
@@ -58,11 +40,6 @@ function tagPositiveArticle(article) {
     const timeElement = article.querySelector('time');
     if (timeElement) {
         const sunflowerEmoji = document.createElement('span');
-        // sunflowerEmoji.className = 'tooltip';
-        // const tooltipText = document.createElement('div');
-        // tooltipText.className = 'tooltiptext';
-        // tooltipText.textContent = 'This article was selected by PositiveNews 🌻';
-        // sunflowerEmoji.appendChild(tooltipText);
         sunflowerEmoji.textContent = '🌻';
         sunflowerEmoji.title = 'This article was selected by PositiveNews 🌻'; // Add tooltip
         timeElement.parentNode.insertBefore(sunflowerEmoji, timeElement.nextSibling);
@@ -71,6 +48,8 @@ function tagPositiveArticle(article) {
     }
 }
 
+// TODO: abstract this to common.js, so for every site, we have just a custom function that generate the Article list:
+// Article is an object with a HTML element and a title
 async function classifyArticles() {
     // Load the cache from storage
     const articleCache = await loadCache();

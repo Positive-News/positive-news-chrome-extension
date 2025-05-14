@@ -1,0 +1,29 @@
+{
+  "name": "positive_news_extension",
+  "version": "1.0.0",
+  "description": "",
+  "main": "background.js",
+  "scripts": {
+    "build": "webpack",
+    "watch": "webpack --watch",
+    "start": "webpack --mode development --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NicolasMICAUX/positive-news-extension.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/NicolasMICAUX/positive-news-extension/issues"
+  },
+  "homepage": "https://github.com/NicolasMICAUX/positive-news-extension#readme",
+  "devDependencies": {
+    "clean-webpack-plugin": "^4.0.0",
+    "copy-webpack-plugin": "^13.0.0",
+    "webpack": "^5.99.8",
+    "webpack-cli": "^6.0.1"
+  }
+}
