@@ -1,4 +1,4 @@
-const { loadCache, saveCache, Article } = require('./common.js');
+const { loadCache, saveCache, Article, debounce } = require('./common.js');
 
 let countHidden = 0;
 
@@ -35,6 +35,7 @@ function hideArticle(article) {
     }
 }
 
+// Function to show that an article is positive and was kept by PositiveNews
 function tagPositiveArticle(article) {
     // Add a small 🌻 in the HTML just after <time> element
     const timeElement = article.querySelector('time');
@@ -48,17 +49,9 @@ function tagPositiveArticle(article) {
     }
 }
 
-// TODO: abstract this to common.js, so for every site, we have just a custom function that generate the Article list:
-// Article is an object with a HTML element and a title
-async function classifyArticles() {
-    // Load the cache from storage
-    const articleCache = await loadCache();
-    console.debug('Article cache loaded:', articleCache);
-
-    // Find all <article> elements on the page
+// Function to identify all articles on the page
+function findArticles() {
     const articles = document.querySelectorAll('article');
-
-    const titlesToClassify = [];
     const articleMap = new Map();
 
     for (const article of articles) {
@@ -67,32 +60,53 @@ async function classifyArticles() {
             console.debug('Article already hidden, skipping:', article);
             continue;
         }
+
         // Find the first <a> element with non-empty text inside the article
         const links = article.querySelectorAll('a');
         const link = Array.from(links).find(a => a.textContent.trim() !== '');
         const title = link ? link.textContent.trim() : null;
-        console.debug('Processing article:', { link, title });
-
+        
         if (title) {
-            // Check if the title is already in the cache
-            if (articleCache.has(title)) {
-                const isPositive = articleCache.get(title);
-                console.debug(`Title "${title}" found in cache with value:`, isPositive);
-
-                if (isPositive) {
-                    tagPositiveArticle(article);
-                } else {
-                    hideArticle(article);
-                }
-                continue;
-            }
-
-            // Add the title to the list for classification
-            titlesToClassify.push(title);
             articleMap.set(title, article);
         } else {
             console.warn('Article does not have a valid title or link:', article);
         }
+    }
+
+    return articleMap;
+}
+
+// Article is an object with a HTML element and a title
+async function classifyArticles() {
+    // Load the cache from storage
+    const articleCache = await loadCache();
+    console.debug('Article cache loaded:', articleCache);
+
+    const articleMap = findArticles();
+    const titlesToClassify = [];
+
+    for (const [title, article] of articleMap.entries()) {
+        // If article already hidden, skip it
+        if (article.style.display === 'none') {
+            console.debug('Article already hidden, skipping:', article);
+            continue;
+        }
+
+        // Check if the title is already in the cache
+        if (articleCache.has(title)) {
+            const isPositive = articleCache.get(title);
+            console.debug(`Title "${title}" found in cache with value:`, isPositive);
+
+            if (isPositive) {
+                tagPositiveArticle(article);
+            } else {
+                hideArticle(article);
+            }
+            continue;
+        }
+
+        // Add the title to the list for classification
+        titlesToClassify.push(title);
     }
 
     if (titlesToClassify.length > 0) {
@@ -148,16 +162,6 @@ async function classifyArticles() {
 
 classifyArticles();
 
-// Utility function to debounce a function
-function debounce(func, wait) {
-    let timeout;
-    return function (...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
-    };
-}
-
-// Debounced version of classifyArticles
 const debouncedClassifyArticles = debounce(classifyArticles, 300);
 
 // Set up a MutationObserver to listen for new article elements added to the DOM
@@ -173,5 +177,4 @@ const observer = new MutationObserver((mutationsList) => {
     }
 });
 
-// Start observing the document body for changes
 observer.observe(document.body, { childList: true, subtree: true });
